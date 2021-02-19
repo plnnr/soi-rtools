@@ -111,29 +111,35 @@ region_net_summarized_migration <- function(.x, cbsafips) {
   
   inflow <- region_migration(.x = .x, cbsafips = cbsafips, direction = "inflow") %>%
     reduce_region_migration() %>% 
-    select(y2, cbsa, cbsaname15, n2.in = n2)
+    select(y2, cbsa, cbsaname15, n1.in = n1, n2.in = n2, agi_adj.in = agi_adj)
   
   outflow <- region_migration(.x = .x, cbsafips = cbsafips, direction = "outflow") %>%
     reduce_region_migration() %>% 
-    select(y2, cbsa, cbsaname15, n2.out = n2)
+    select(y2, cbsa, cbsaname15, n1.out = n1, n2.out = n2, agi_adj.out = agi_adj)
   
   full_join(inflow, outflow, by = c("y2", "cbsa", "cbsaname15")) %>%
-    mutate(n2.net = n2.in - n2.out,
-           n2.throughput = n2.in + n2.out)
+    mutate(n1.net = n1.in - n1.out,
+           n1.throughput = n1.in + n1.out,
+           n2.net = n2.in - n2.out,
+           n2.throughput = n2.in + n2.out,
+           agi_adj.net = agi_adj.in - agi_adj.out,
+           agi_adj.throughput = agi_adj.in + agi_adj.out)
 }
 
-graph_net_by_year <- function(.x) {
+graph_var_by_year <- function(.x, var) {
+  var <- sym(var)
   .x %>%
     left_join(., select(st_drop_geometry(msas), GEOID), by = c("cbsa" = "GEOID")) %>%
     left_join(., msa_shortname, by = c("cbsa" = "cbsa13")) %>%
-    mutate(cbsa_shortname = fct_reorder(cbsa_shortname, -n2.net)) %>%
-    ggplot(aes(x = y2, y = n2.net)) +
+    mutate(cbsa_shortname = fct_reorder(cbsa_shortname, -!!var)) %>%
+    ggplot(aes(x = y2, y = !!var)) +
     geom_bar(stat = "identity") +
     facet_wrap(~cbsa_shortname, scales = "free_y") +
     theme_minimal()
 }
 
-graph_flow_by_year <- function(.x) {
+graph_flow_by_year <- function(.x, var) {
+  var <- sym(var)
   .x %>%
     group_by(y2, cbsa, cbsaname15) %>% # y1, y2, 
     summarize(n1 = sum(n1, na.rm = T),
@@ -142,9 +148,9 @@ graph_flow_by_year <- function(.x) {
     arrange(desc(y2), desc(n2)) %>%  ungroup() %>%
     left_join(., select(st_drop_geometry(msas), GEOID), by = c("cbsa" = "GEOID")) %>%
     left_join(., msa_shortname, by = c("cbsa" = "cbsa13")) %>%
-    mutate(avg_hh_income = agi_adj / n1 * 1000,
-           cbsa_shortname = fct_reorder(cbsa_shortname, -n2)) %>%
-    ggplot(aes(x = y2, y = n2, fill = avg_hh_income)) +
+    mutate(avg_hh_income = agi_adj / n1,
+           cbsa_shortname = fct_reorder(cbsa_shortname, -!!var)) %>%
+    ggplot(aes(x = y2, y = !!var, fill = avg_hh_income)) +
     geom_bar(stat = "identity") +
     scale_fill_viridis_c(trans = "log") +
     facet_wrap(~cbsa_shortname, scales = "free_y") +

@@ -16,8 +16,6 @@ options(
 
 source("utils.R")
 
-
-
 # Define UI for application that draws a histogram
 ui <- fluidPage(
     theme = shinytheme("simplex"), ##(lumen, paper, simplex, flatly, yeti)
@@ -59,7 +57,7 @@ server <- function(input, output) {
         ##### Plot net migration and inflow migration ######
         data2graph() %>%
             filter_for_major_metros(topn = 20) %>%
-            graph_net_by_year() +
+            graph_var_by_year(., "n2.net") +
             scale_y_continuous(labels = scales::comma_format()) +
             labs(x = "Year", y = "Total People (Exemptions)",
                  title = paste0("Net Regional Migration in ", input$msa_name),
