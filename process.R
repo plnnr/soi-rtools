@@ -42,6 +42,7 @@ soi_migration_data <- rbind(map_df(.x = links, .f = read_soi_url)) %>%
   mutate(n1 = n1 %>% na_if(., -1),
          n2 = n2 %>% na_if(., -1),
          agi = agi %>% na_if(., -1),
+         agi = agi * 1000,
          agi_adj = agi * inflation_factor_2020,
          y2_fips = paste0(y2_statefips, y2_countyfips),
          y1_fips = paste0(y1_statefips, y1_countyfips)) %>%
